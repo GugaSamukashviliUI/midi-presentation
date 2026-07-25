@@ -27,13 +27,15 @@ export function RevealItem({
   children,
   className,
   style,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  onClick?: () => void;
 }) {
   return (
-    <motion.div variants={revealItem} className={className} style={style}>
+    <motion.div variants={revealItem} className={className} style={style} onClick={onClick}>
       {children}
     </motion.div>
   );
