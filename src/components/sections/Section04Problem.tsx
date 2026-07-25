@@ -1,4 +1,7 @@
-﻿import { Section } from "@/components/Section";
+"use client";
+
+import { useState } from "react";
+import { Section } from "@/components/Section";
 import { RevealItem } from "@/components/Reveal";
 import { Expandable } from "@/components/Expandable";
 
@@ -24,6 +27,8 @@ const stats = [
 ];
 
 export function Section04Problem() {
+  const [poppedIndex, setPoppedIndex] = useState<number | null>(null);
+
   return (
     <Section
       id="problem"
@@ -63,7 +68,8 @@ export function Section04Problem() {
           {stats.map((stat, i) => (
             <RevealItem
               key={stat.number}
-              className={`relative w-[85%] max-w-[340px] rounded-2xl px-6 py-5 shadow-xl border cursor-default transition-transform duration-300 ease-out hover:-translate-y-[72px] ${
+              onClick={() => setPoppedIndex((prev) => (prev === i ? null : i))}
+              className={`relative w-[85%] max-w-[340px] rounded-2xl px-6 py-5 shadow-xl border cursor-pointer transition-transform duration-300 ease-out hover:-translate-y-[72px] ${
                 stat.highlight ? "border-coral/40" : "border-hairline"
               }`}
               style={{
@@ -73,6 +79,7 @@ export function Section04Problem() {
                   : "color-mix(in srgb, var(--color-card) 15%, transparent)",
                 backdropFilter: "blur(16px)",
                 WebkitBackdropFilter: "blur(16px)",
+                transform: poppedIndex === i ? "translateY(-72px)" : undefined,
               }}
             >
               <p

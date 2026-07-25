@@ -41,26 +41,65 @@ function FeaturePreview({ title }: { title: string }) {
 }
 
 const MOBILE_STACK_HEIGHT = 700;
+const CARD_W = 368;
+// Elements that should handle their own drag/tap instead of paging the stack
+// (sliders, buttons, links, inputs, and anything with its own horizontal
+// scroller like the chat suggestion rows).
+const INTERACTIVE_SELECTOR = 'input, button, a, textarea, select, [role="slider"], .overflow-x-auto, .overflow-y-auto';
 
 export function Section12Features() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const mobileTrackRef = useRef<HTMLDivElement>(null);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const desktopTrackRef = useRef<HTMLDivElement>(null);
 
-  const jumpTo = (i: number) => {
-    setActiveIndex(i);
-    const el = mobileTrackRef.current;
-    if (el) {
-      el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  const handleStackPointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest(INTERACTIVE_SELECTOR)) {
+      swipeStart.current = null;
+      return;
+    }
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleStackPointerUp = (e: React.PointerEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) {
+        setActiveIndex((i) => Math.min(features.length - 1, i + 1));
+      } else {
+        setActiveIndex((i) => Math.max(0, i - 1));
+      }
     }
   };
 
-  const handleMobileScroll = () => {
-    const el = mobileTrackRef.current;
+  const scrollDesktopTo = (i: number) => {
+    const el = desktopTrackRef.current;
+    const card = el?.children[i] as HTMLElement | undefined;
+    if (!el || !card) return;
+    const target = card.offsetLeft - el.clientWidth / 2 + card.clientWidth / 2;
+    el.scrollTo({ left: target, behavior: "smooth" });
+  };
+
+  const handleDesktopScroll = () => {
+    const el = desktopTrackRef.current;
     if (!el) return;
-    const slideWidth = el.clientWidth;
-    if (slideWidth === 0) return;
-    const idx = Math.round(el.scrollLeft / slideWidth);
-    setActiveIndex(Math.max(0, Math.min(features.length - 1, idx)));
+    const center = el.scrollLeft + el.clientWidth / 2;
+    let closest = 0;
+    let minDist = Infinity;
+    Array.from(el.children).forEach((child, i) => {
+      const c = child as HTMLElement;
+      const cardCenter = c.offsetLeft + c.clientWidth / 2;
+      const dist = Math.abs(cardCenter - center);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = i;
+      }
+    });
+    setActiveIndex(closest);
   };
 
   return (
@@ -68,7 +107,7 @@ export function Section12Features() {
       id="features"
       index="12"
       title="Key Features"
-      className="min-h-[980px] py-16 md:py-32"
+      className="min-h-[980px] py-16 md:py-32 overflow-x-hidden"
     >
       <RevealItem>
         <h2 className="font-bold text-4xl md:text-6xl leading-[0.95] max-w-2xl">
@@ -76,32 +115,34 @@ export function Section12Features() {
         </h2>
       </RevealItem>
 
-      {/* Desktop / tablet: fanned depth stack, click a card to bring it forward. */}
-      <RevealItem
-        className="mt-14 hidden sm:block"
-        style={{ perspective: "1600px", width: "100vw", marginLeft: "calc(50% - 50vw)" }}
-      >
-        <div className="flex flex-nowrap justify-center overflow-x-hidden px-10 py-4 -my-4">
+      {/* Desktop / tablet: real horizontal scroll, snaps the active card to
+          center. Padding on both sides equals half a card width so the
+          first and last card can also reach dead center. Vertical room is
+          generous so the active card's scale-up never clips. */}
+      <RevealItem className="mt-14 hidden sm:block" style={{ width: "100vw", marginLeft: "calc(50% - 50vw)" }}>
+        <div
+          ref={desktopTrackRef}
+          onScroll={handleDesktopScroll}
+          className="flex gap-8 overflow-x-auto snap-x snap-mandatory no-scrollbar py-14"
+          style={{ paddingLeft: `calc(50% - ${CARD_W / 2}px)`, paddingRight: `calc(50% - ${CARD_W / 2}px)` }}
+        >
           {features.map((f, i) => {
             const isActive = i === activeIndex;
-            const rotate = (i - activeIndex) * 3;
             return (
               <div
                 key={f.title}
-                onClick={() => setActiveIndex(i)}
-                className={`w-[368px] shrink-0 rounded-2xl border border-hairline p-7 flex flex-col cursor-pointer transition-[transform,filter,opacity] duration-500 ease-out ${
-                  i === 0 ? "" : "-ml-44 sm:-ml-36 md:-ml-16 lg:ml-6"
-                }`}
+                onClick={() => scrollDesktopTo(i)}
+                className="rounded-2xl border border-hairline p-7 flex flex-col cursor-pointer transition-[transform,filter,opacity] duration-500 ease-out shrink-0"
                 style={{
+                  width: CARD_W,
+                  scrollSnapAlign: "center",
                   background: "color-mix(in srgb, var(--color-card) 55%, transparent)",
                   backdropFilter: "blur(16px)",
                   WebkitBackdropFilter: "blur(16px)",
-                  zIndex: isActive ? 20 : i,
-                  transform: isActive
-                    ? "scale(1.04) rotate(0deg)"
-                    : `scale(0.94) rotate(${rotate}deg)`,
-                  opacity: isActive ? 1 : 0.7,
-                  filter: isActive ? "none" : "blur(1.5px)",
+                  zIndex: isActive ? 20 : 1,
+                  transform: isActive ? "scale(1.06)" : "scale(0.92)",
+                  opacity: isActive ? 1 : 0.6,
+                  filter: isActive ? "none" : "blur(2px)",
                   boxShadow: isActive
                     ? "0 32px 56px -16px rgba(0,0,0,0.4)"
                     : "0 14px 28px -12px rgba(0,0,0,0.25)",
@@ -117,21 +158,33 @@ export function Section12Features() {
             );
           })}
         </div>
+
+        <div className="flex justify-center gap-2 mt-2">
+          {features.map((f, i) => (
+            <button
+              key={f.title}
+              onClick={() => scrollDesktopTo(i)}
+              aria-label={`Show ${f.title}`}
+              className="h-2 rounded-full transition-all cursor-pointer"
+              style={{
+                width: i === activeIndex ? 24 : 8,
+                background: i === activeIndex ? "var(--color-coral)" : "var(--color-ink-faint)",
+              }}
+            />
+          ))}
+        </div>
       </RevealItem>
 
-      {/* Mobile: zero-gap stack. Swipe the card header (or tap a dot) to switch which one is on top. */}
+      {/* Mobile: zero-gap stack. Swipe anywhere on the section (except controls
+          like sliders/buttons/inputs, which keep their own touch behavior)
+          to switch which card is on top, or tap a dot. */}
       <RevealItem className="mt-14 sm:hidden">
-        <div className="relative" style={{ height: MOBILE_STACK_HEIGHT }}>
-          <div
-            ref={mobileTrackRef}
-            onScroll={handleMobileScroll}
-            className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
-          >
-            {features.map((f) => (
-              <div key={f.title} className="w-full h-full shrink-0" style={{ scrollSnapAlign: "center" }} />
-            ))}
-          </div>
-
+        <div
+          className="relative"
+          style={{ height: MOBILE_STACK_HEIGHT, touchAction: "pan-y" }}
+          onPointerDown={handleStackPointerDown}
+          onPointerUp={handleStackPointerUp}
+        >
           {features.map((f, i) => {
             const isActive = i === activeIndex;
             const rotate = (i - activeIndex) * 6;
@@ -153,8 +206,7 @@ export function Section12Features() {
                     : "0 14px 28px -12px rgba(0,0,0,0.25)",
                 }}
               >
-                {/* Swipe handle — sits above the invisible scroll track so dragging here pages the stack. */}
-                <div className="p-7 pb-0 pointer-events-none">
+                <div className="p-7 pb-0">
                   <p className="font-bold text-2xl">{f.title}</p>
                   <p className="text-ink-soft mt-3 leading-relaxed">{f.visible}</p>
                 </div>
@@ -173,7 +225,7 @@ export function Section12Features() {
           {features.map((f, i) => (
             <button
               key={f.title}
-              onClick={() => jumpTo(i)}
+              onClick={() => setActiveIndex(i)}
               aria-label={`Show ${f.title}`}
               className="h-2 rounded-full transition-all cursor-pointer"
               style={{
