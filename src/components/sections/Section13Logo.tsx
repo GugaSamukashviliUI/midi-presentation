@@ -42,6 +42,10 @@ export function Section13Logo() {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button")) {
+      touchStart.current = null;
+      return;
+    }
     touchStart.current = { x: e.clientX, y: e.clientY };
   };
 
@@ -49,6 +53,7 @@ export function Section13Logo() {
     const start = touchStart.current;
     touchStart.current = null;
     if (!start) return;
+    if ((e.target as HTMLElement).closest("button")) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
@@ -203,6 +208,31 @@ export function Section13Logo() {
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelected((i) => (i === null ? i : (i - 1 + VARIATIONS.length) % VARIATIONS.length));
+            }}
+            aria-label="Previous sketch"
+            className="absolute left-3 md:left-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-white/80 hover:text-white cursor-pointer border border-white/30 bg-white/5"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelected((i) => (i === null ? i : (i + 1) % VARIATIONS.length));
+            }}
+            aria-label="Next sketch"
+            className="absolute right-3 md:right-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-white/80 hover:text-white cursor-pointer border border-white/30 bg-white/5"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M9 18l6-6-6-6" />
             </svg>
           </button>
 
