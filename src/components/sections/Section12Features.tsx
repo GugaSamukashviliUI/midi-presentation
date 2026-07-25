@@ -70,7 +70,7 @@ export function Section12Features() {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`snap-card shrink-0 w-[80vw] sm:w-[340px] lg:w-[380px] rounded-2xl border border-hairline p-7 flex flex-col transition-transform duration-300 ${
+              className={`snap-card shrink-0 w-[88vw] sm:w-[380px] lg:w-[420px] rounded-2xl border border-hairline p-7 flex flex-col transition-transform duration-300 ${
                 i === 0 ? "ml-10 lg:ml-0" : "-ml-28 sm:-ml-16 md:-ml-10 lg:ml-0"
               } ${i === features.length - 1 ? "mr-10 lg:mr-0" : ""} ${FAN_ROTATE[i]} ${FAN_LIFT[i]} lg:rotate-0 lg:translate-y-0`}
               style={{
