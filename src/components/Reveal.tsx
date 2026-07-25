@@ -16,7 +16,7 @@ export function Reveal({
       variants={revealContainer}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount: 0.15 }}
+      viewport={{ once: true, amount: 0 }}
     >
       {children}
     </motion.div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Section } from "@/components/Section";
 import { RevealItem } from "@/components/Reveal";
@@ -38,6 +38,29 @@ export function Section13Logo() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [selected]);
+
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    touchStart.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) {
+        setSelected((i) => (i === null ? i : (i + 1) % VARIATIONS.length));
+      } else {
+        setSelected((i) => (i === null ? i : (i - 1 + VARIATIONS.length) % VARIATIONS.length));
+      }
+    } else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+      setSelected(null);
+    }
+  };
 
   return (
     <Section
@@ -169,8 +192,9 @@ export function Section13Logo() {
       {selected !== null && (
         <div
           className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 p-6"
-          style={{ background: "rgba(0,0,0,0.85)" }}
-          onClick={() => setSelected(null)}
+          style={{ background: "rgba(0,0,0,0.85)", touchAction: "none" }}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
         >
           <button
             onClick={() => setSelected(null)}

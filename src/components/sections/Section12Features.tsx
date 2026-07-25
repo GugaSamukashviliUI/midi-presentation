@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Section } from "@/components/Section";
 import { RevealItem } from "@/components/Reveal";
 import { Expandable } from "@/components/Expandable";
@@ -31,8 +31,37 @@ const features = [
   },
 ];
 
+function FeaturePreview({ title }: { title: string }) {
+  if (title === "Smart Filter") return <FilterOverlayPreview />;
+  if (title === "Informative Posts") return <PostOverlayPreview />;
+  if (title === "Date Flow AI Chat") return <AIChatPreview />;
+  return (
+    <Placeholder label="App screenshot" note="midi-app-nine.vercel.app" className="mt-6" aspect="aspect-[4/5]" />
+  );
+}
+
+const MOBILE_STACK_HEIGHT = 700;
+
 export function Section12Features() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const mobileTrackRef = useRef<HTMLDivElement>(null);
+
+  const jumpTo = (i: number) => {
+    setActiveIndex(i);
+    const el = mobileTrackRef.current;
+    if (el) {
+      el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    }
+  };
+
+  const handleMobileScroll = () => {
+    const el = mobileTrackRef.current;
+    if (!el) return;
+    const slideWidth = el.clientWidth;
+    if (slideWidth === 0) return;
+    const idx = Math.round(el.scrollLeft / slideWidth);
+    setActiveIndex(Math.max(0, Math.min(features.length - 1, idx)));
+  };
 
   return (
     <Section
@@ -47,8 +76,9 @@ export function Section12Features() {
         </h2>
       </RevealItem>
 
+      {/* Desktop / tablet: fanned depth stack, click a card to bring it forward. */}
       <RevealItem
-        className="mt-14"
+        className="mt-14 hidden sm:block"
         style={{ perspective: "1600px", width: "100vw", marginLeft: "calc(50% - 50vw)" }}
       >
         <div className="flex flex-nowrap justify-center overflow-x-hidden px-10 py-4 -my-4">
@@ -77,28 +107,81 @@ export function Section12Features() {
                     : "0 14px 28px -12px rgba(0,0,0,0.25)",
                 }}
               >
-              <p className="font-bold text-2xl">{f.title}</p>
-              <p className="text-ink-soft mt-3 leading-relaxed">{f.visible}</p>
-              <Expandable trigger="read more">
-                <p>{f.expanded}</p>
-              </Expandable>
-              {f.title === "Smart Filter" ? (
-                <FilterOverlayPreview />
-              ) : f.title === "Informative Posts" ? (
-                <PostOverlayPreview />
-              ) : f.title === "Date Flow AI Chat" ? (
-                <AIChatPreview />
-              ) : (
-                <Placeholder
-                  label="App screenshot"
-                  note="midi-app-nine.vercel.app"
-                  className="mt-6"
-                  aspect="aspect-[4/5]"
-                />
-              )}
+                <p className="font-bold text-2xl">{f.title}</p>
+                <p className="text-ink-soft mt-3 leading-relaxed">{f.visible}</p>
+                <Expandable trigger="read more">
+                  <p>{f.expanded}</p>
+                </Expandable>
+                <FeaturePreview title={f.title} />
               </div>
             );
           })}
+        </div>
+      </RevealItem>
+
+      {/* Mobile: zero-gap stack. Swipe the card header (or tap a dot) to switch which one is on top. */}
+      <RevealItem className="mt-14 sm:hidden">
+        <div className="relative" style={{ height: MOBILE_STACK_HEIGHT }}>
+          <div
+            ref={mobileTrackRef}
+            onScroll={handleMobileScroll}
+            className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+          >
+            {features.map((f) => (
+              <div key={f.title} className="w-full h-full shrink-0" style={{ scrollSnapAlign: "center" }} />
+            ))}
+          </div>
+
+          {features.map((f, i) => {
+            const isActive = i === activeIndex;
+            const rotate = (i - activeIndex) * 6;
+            return (
+              <div
+                key={f.title}
+                className="absolute inset-x-0 top-0 rounded-2xl border border-hairline flex flex-col transition-[transform,filter,opacity] duration-500 ease-out"
+                style={{
+                  background: "color-mix(in srgb, var(--color-card) 55%, transparent)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  zIndex: isActive ? 10 : 10 - Math.abs(i - activeIndex),
+                  transform: isActive ? "scale(1) rotate(0deg)" : `scale(0.94) rotate(${rotate}deg)`,
+                  opacity: isActive ? 1 : 0.75,
+                  filter: isActive ? "none" : "blur(1px)",
+                  pointerEvents: isActive ? "auto" : "none",
+                  boxShadow: isActive
+                    ? "0 32px 56px -16px rgba(0,0,0,0.4)"
+                    : "0 14px 28px -12px rgba(0,0,0,0.25)",
+                }}
+              >
+                {/* Swipe handle — sits above the invisible scroll track so dragging here pages the stack. */}
+                <div className="p-7 pb-0 pointer-events-none">
+                  <p className="font-bold text-2xl">{f.title}</p>
+                  <p className="text-ink-soft mt-3 leading-relaxed">{f.visible}</p>
+                </div>
+                <div className="px-7 pb-7">
+                  <Expandable trigger="read more">
+                    <p>{f.expanded}</p>
+                  </Expandable>
+                  <FeaturePreview title={f.title} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 flex justify-center gap-2">
+          {features.map((f, i) => (
+            <button
+              key={f.title}
+              onClick={() => jumpTo(i)}
+              aria-label={`Show ${f.title}`}
+              className="h-2 rounded-full transition-all cursor-pointer"
+              style={{
+                width: i === activeIndex ? 24 : 8,
+                background: i === activeIndex ? "var(--color-coral)" : "var(--color-ink-faint)",
+              }}
+            />
+          ))}
         </div>
       </RevealItem>
     </Section>
