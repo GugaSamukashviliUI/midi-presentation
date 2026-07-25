@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Section } from "@/components/Section";
 import { RevealItem } from "@/components/Reveal";
 import { Expandable } from "@/components/Expandable";
@@ -27,8 +26,6 @@ const stats = [
 ];
 
 export function Section04Problem() {
-  const [poppedIndex, setPoppedIndex] = useState<number | null>(null);
-
   return (
     <Section
       id="problem"
@@ -68,18 +65,18 @@ export function Section04Problem() {
           {stats.map((stat, i) => (
             <RevealItem
               key={stat.number}
-              onClick={() => setPoppedIndex((prev) => (prev === i ? null : i))}
-              className={`relative w-[85%] max-w-[340px] rounded-2xl px-6 py-5 shadow-xl border cursor-pointer transition-transform duration-300 ease-out hover:-translate-y-[72px] ${
+              className={`relative w-[85%] max-w-[340px] rounded-2xl px-6 py-5 shadow-xl border transition-transform duration-300 ease-out hover:-translate-y-[72px] ${
+                i === 0 ? "" : "mt-6 sm:mt-[-4rem]"
+              } ${
                 stat.highlight ? "border-coral/40" : "border-hairline"
               }`}
               style={{
-                ...(i === 0 ? {} : { marginTop: "-4rem", marginRight: `${i * 6}%` }),
+                ...(i === 0 ? {} : { marginRight: `${i * 6}%` }),
                 background: stat.highlight
                   ? "color-mix(in srgb, var(--color-coral) 15%, transparent)"
                   : "color-mix(in srgb, var(--color-card) 15%, transparent)",
                 backdropFilter: "blur(16px)",
                 WebkitBackdropFilter: "blur(16px)",
-                transform: poppedIndex === i ? "translateY(-72px)" : undefined,
               }}
             >
               <p
